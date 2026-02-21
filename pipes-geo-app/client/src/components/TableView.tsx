@@ -1,47 +1,22 @@
-import React, { useState } from "react";
+import React from "react";
 import { usePipeContext } from "../context/PipeContext";
-import { ApiResponse, Pipe } from "../types";
-
-const API_BASE = "http://localhost:4000";
+import { Pipe } from "../types";
 
 const TableView: React.FC = () => {
-  const { state, setPipes, setLoading, setSelectedTag } = usePipeContext();
-
-  // Fetching data directly in the render body — this fires on every render.
-  // Because PipeContext re-renders all consumers on every state change (flaw 5),
-  // this fetch executes repeatedly: once when pipes load, once when loading
-  // flips to false, and once for each filter change. Each call sets pipes
-  // via setPipes, which triggers another render and another fetch.
-  // There is also no AbortController, so in-flight requests from stale renders
-  // are never cancelled — the last response to arrive wins regardless of order.
-  // fetch(`${API_BASE}/pipes`)
-  //   .then((res) => res.json())
-  //   .then((data: ApiResponse) => {
-  //     setPipes(data);
-  //   })
-  //   .catch(() => {
-  //     // error silently swallowed
-  //   });
-
-  // A second local copy of the active filter — TableView manages its own
-  // selectedTag independently of MapView's copy and of context.state.selectedTag.
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const { state, setSelectedTag } = usePipeContext();
 
   const handleTagChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value === "all" ? null : e.target.value;
-    setActiveTag(val);
     setSelectedTag(val);
   };
 
   const allTags = Array.from(
-    new Set(state.pipes.flatMap((p) => p.tags as string[]))
+    new Set(state.pipes.flatMap((p) => p.tags))
   ).sort();
 
-  // Filtering uses local `activeTag` rather than `state.selectedTag`.
-  // A tag change in MapView updates context but this component keeps showing
-  // its own unaffected rows.
-  const filteredPipes: Pipe[] = activeTag
-    ? state.pipes.filter((p) => (p.tags as string[]).includes(activeTag))
+  // Use context state as single source of truth
+  const filteredPipes: Pipe[] = state.selectedTag
+    ? state.pipes.filter((p) => p.tags.includes(state.selectedTag))
     : state.pipes;
 
   return (
@@ -60,7 +35,7 @@ const TableView: React.FC = () => {
         <select
           id="tag-filter"
           onChange={handleTagChange}
-          value={activeTag ?? "all"}
+          value={state.selectedTag ?? "all"}
           style={{ fontSize: 12, padding: "2px 6px" }}
         >
           <option value="all">All</option>
@@ -111,7 +86,7 @@ const TableView: React.FC = () => {
                 />
                 {pipe.color}
               </td>
-              <td style={tdStyle}>{(pipe.tags as string[]).join(", ")}</td>
+              <td style={tdStyle}>{pipe.tags.join(", ")}</td>
             </tr>
           ))}
           {filteredPipes.length === 0 && (

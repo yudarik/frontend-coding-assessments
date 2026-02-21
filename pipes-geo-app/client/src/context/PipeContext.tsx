@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useMemo, useCallback } from "react";
 import { Pipe } from "../types";
 
 // All application state lives in a single object. Any change to pipes, loading,
@@ -27,25 +27,22 @@ export const PipeProvider: React.FC<{ children: React.ReactNode }> = ({
     loading: false,
   });
 
-  const setPipes = (pipes: Pipe[]) =>
-    setState((prev) => ({ ...prev, pipes }));
+  const setPipes = useCallback((pipes: Pipe[]) =>
+    setState((prev) => ({ ...prev, pipes })), []);
 
-  const setSelectedTag = (selectedTag: string | null) =>
-    setState((prev) => ({ ...prev, selectedTag }));
+  const setSelectedTag = useCallback((selectedTag: string | null) =>
+    setState((prev) => ({ ...prev, selectedTag })), []);
 
-  const setLoading = (loading: boolean) =>
-    setState((prev) => ({ ...prev, loading }));
+  const setLoading = useCallback((loading: boolean) =>
+    setState((prev) => ({ ...prev, loading })), []);
 
-  // A new object literal is created on every render — no useMemo here.
-  // Every call to setPipes, setLoading, or setSelectedTag causes ALL
-  // context consumers to re-render, even if their relevant slice of state
-  // hasn't changed.
-  const value: PipeContextValue = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value: PipeContextValue = useMemo(() => ({
     state,
     setPipes,
     setSelectedTag,
     setLoading,
-  };
+  }), [state, setPipes, setSelectedTag, setLoading]);
 
   return <PipeContext.Provider value={value}>{children}</PipeContext.Provider>;
 };
