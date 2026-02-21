@@ -4,6 +4,7 @@ import { PipeProvider, usePipeContext } from "./context/PipeContext";
 import MapView from "./components/MapView";
 import TableView from "./components/TableView";
 import Navigation from "./components/Navigation";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const API_BASE = "/api";
 
@@ -12,16 +13,29 @@ const AppShell: React.FC = () => {
   const { limit } = useParams<{ limit: string }>();
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     setLoading(true);
     const url = limit ? `${API_BASE}/pipes?limit=${limit}` : `${API_BASE}/pipes`;
-    fetch(url)
+    
+    fetch(url, { signal: abortController.signal })
       .then((res) => res.json())
       .then((data) => {
         setPipes(data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
-  }, [limit]);
+      .catch((err) => {
+        // Don't update state if the request was aborted
+        if (err.name !== 'AbortError') {
+          setLoading(false);
+        }
+      });
+
+    // Cleanup: abort the fetch if component unmounts or limit changes
+    return () => {
+      abortController.abort();
+    };
+  }, [limit, setPipes, setLoading]);
 
   return (
     <div
@@ -51,10 +65,11 @@ const AppShell: React.FC = () => {
 
       <Navigation />
 
-      {/* Top half — map. No ErrorBoundary here: a bad pipe coordinate or
-          a Leaflet initialisation failure will unmount the entire application. */}
+      {/* Top half — map, wrapped in ErrorBoundary to prevent crashes */}
       <div style={{ flex: 1, minHeight: 0, borderBottom: "2px solid #ccc" }}>
-        <MapView />
+        <ErrorBoundary>
+          <MapView />
+        </ErrorBoundary>
       </div>
 
       {/* Bottom half — table */}
@@ -65,9 +80,7 @@ const AppShell: React.FC = () => {
   );
 };
 
-// PipeProvider wraps the entire application tree. Because the context value
-// is not memoized (see PipeContext.tsx), every state update re-renders
-// AppShell, MapView, TableView, PipeMap, and MapCenterController — the full tree.
+// PipeProvider wraps the entire application tree.
 const App: React.FC = () => {
   return (
     <BrowserRouter>

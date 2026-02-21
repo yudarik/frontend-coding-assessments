@@ -13,41 +13,34 @@ const MapCenterController: React.FC<{ pipes: Pipe[] }> = ({ pipes }) => {
   useEffect(() => {
     if (pipes.length === 0) return;
     const first = pipes[0];
-    // Directly calling an imperative Leaflet method inside a React effect.
-    // This sidesteps React's rendering model — if the component unmounts
-    // while the animation is in progress there's no cleanup, and the
-    // viewport state lives outside of React entirely.
-
+    
+    // Use flyTo but with proper cleanup
     map.flyTo(
       [first.startPoint.lat, first.startPoint.lng],
       13,
       { animate: true, duration: 0.8 }
     );
-  }, [pipes, map, { tag: "all" }]);
+
+    // Cleanup: stop any ongoing animations if component unmounts
+    return () => {
+      map.stop();
+    };
+  }, [pipes, map]); // Fixed: removed unstable object literal dependency
 
   return null;
 };
 
 const PipeMap: React.FC<Props> = ({ pipes }) => {
-  // Memoizing a string interpolation — this is essentially free to compute
-  // on every render and gains nothing from memoization.
-  const statusLabel = useMemo(
-    () => `Showing ${pipes.length} pipe${pipes.length !== 1 ? "s" : ""}`,
-    [pipes.length]
-  );
+  // Simple string interpolation - no need for useMemo
+  const statusLabel = `Showing ${pipes.length} pipe${pipes.length !== 1 ? "s" : ""}`;
 
-  // This effect re-runs on every render because the dependency array contains
-  // a freshly-created object literal. Objects are compared by reference in
-  // JavaScript, so `{ tag: "all" } !== { tag: "all" }` every time.
+  // Fixed: removed unstable dependency, effect only runs once on mount
   useEffect(() => {
-    console.log("Pipe filter updated, recalculating bounds...");
-  }, [{ tag: "all" }]); // eslint-disable-line react-hooks/exhaustive-deps
+    console.log("Pipe map mounted, ready to display pipes");
+  }, []);
 
-  // Building the full GeoJSON FeatureCollection on every render.
-  // This O(n) transformation allocates new objects for every feature on
-  // every render cycle — the exact kind of work that should be wrapped in
-  // useMemo with a `[pipes]` dependency.
-  const geoJsonFeatures = {
+  // Fixed: Memoize the expensive GeoJSON transformation
+  const geoJsonFeatures = useMemo(() => ({
     type: "FeatureCollection" as const,
     features: pipes.map((pipe) => ({
       type: "Feature" as const,
@@ -65,7 +58,7 @@ const PipeMap: React.FC<Props> = ({ pipes }) => {
         tags: pipe.tags,
       },
     })),
-  };
+  }), [pipes]);
 
   // geoJsonFeatures is computed above but currently unused by the Polyline
   // rendering below — it would feed a GeoJSON layer in a production implementation.

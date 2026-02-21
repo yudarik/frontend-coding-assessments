@@ -28,9 +28,23 @@ app.get("/pipes", (req: Request, res: Response) => {
 });
 
 // POST /pipes
+interface CreatePipeDto {
+  name: string;
+  startPoint: { lat: number; lng: number };
+  endPoint: { lat: number; lng: number };
+  color?: string;
+  tags?: string[];
+}
+
 app.post("/pipes", (req: Request, res: Response) => {
-  // FLAW 7 (server-side echo): body cast to `any` with no input validation
-  const body: any = req.body;
+  const body = req.body as CreatePipeDto;
+  
+  // Validate required fields
+  if (!body.name || !body.startPoint || !body.endPoint) {
+    res.status(400).json({ error: "Missing required fields: name, startPoint, endPoint" });
+    return;
+  }
+  
   try {
     const inserted = insertPipe({
       name: body.name,

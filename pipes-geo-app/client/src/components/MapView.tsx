@@ -1,23 +1,21 @@
-import React, { useState } from "react";
+import React from "react";
 import { usePipeContext } from "../context/PipeContext";
 import PipeMap from "./PipeMap";
 
 const MapView: React.FC = () => {
   const { state, setSelectedTag } = usePipeContext();
 
-  const [activeTag, setActiveTag] = useState<string | null>(null);
-
   const allTags = Array.from(
-    new Set(state.pipes.flatMap((p) => p.tags as string[]))
+    new Set(state.pipes.flatMap((p) => p.tags))
   ).sort();
 
   const handleTagClick = (tag: string | null) => {
-    setActiveTag(tag);
     setSelectedTag(tag);
   };
 
-  const filteredPipes = activeTag
-    ? state.pipes.filter((p) => (p.tags as string[]).includes(activeTag))
+  // Use context state as single source of truth
+  const filteredPipes = state.selectedTag
+    ? state.pipes.filter((p) => p.tags.includes(state.selectedTag))
     : state.pipes;
 
   return (
@@ -42,8 +40,8 @@ const MapView: React.FC = () => {
             cursor: "pointer",
             border: "1px solid #bbb",
             borderRadius: 3,
-            background: activeTag === null ? "#1565C0" : "#fff",
-            color: activeTag === null ? "#fff" : "#333",
+            background: state.selectedTag === null ? "#1565C0" : "#fff",
+            color: state.selectedTag === null ? "#fff" : "#333",
           }}
         >
           All
@@ -58,8 +56,8 @@ const MapView: React.FC = () => {
               cursor: "pointer",
               border: "1px solid #bbb",
               borderRadius: 3,
-              background: activeTag === tag ? "#1565C0" : "#fff",
-              color: activeTag === tag ? "#fff" : "#333",
+              background: state.selectedTag === tag ? "#1565C0" : "#fff",
+              color: state.selectedTag === tag ? "#fff" : "#333",
             }}
           >
             {tag}
