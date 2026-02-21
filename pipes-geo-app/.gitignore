@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Database files
+server/pipes.db
+server/pipes.db-shm
+server/pipes.db-wal
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
