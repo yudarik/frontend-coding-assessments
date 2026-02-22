@@ -7,6 +7,8 @@ interface AppState {
   pipes: Pipe[];
   selectedTag: string | null;
   loading: boolean;
+  measurementMode: boolean;
+  selectedPipeIds: number[];
 }
 
 interface PipeContextValue {
@@ -14,6 +16,9 @@ interface PipeContextValue {
   setPipes: (pipes: Pipe[]) => void;
   setSelectedTag: (tag: string | null) => void;
   setLoading: (loading: boolean) => void;
+  setMeasurementMode: (enabled: boolean) => void;
+  togglePipeSelection: (pipeId: number) => void;
+  clearPipeSelection: () => void;
 }
 
 const PipeContext = createContext<PipeContextValue | null>(null);
@@ -25,6 +30,8 @@ export const PipeProvider: React.FC<{ children: React.ReactNode }> = ({
     pipes: [],
     selectedTag: null,
     loading: false,
+    measurementMode: false,
+    selectedPipeIds: [],
   });
 
   const setPipes = (pipes: Pipe[]) =>
@@ -36,6 +43,20 @@ export const PipeProvider: React.FC<{ children: React.ReactNode }> = ({
   const setLoading = (loading: boolean) =>
     setState((prev) => ({ ...prev, loading }));
 
+  const setMeasurementMode = (enabled: boolean) =>
+    setState((prev) => ({ ...prev, measurementMode: enabled, selectedPipeIds: enabled ? prev.selectedPipeIds : [] }));
+
+  const togglePipeSelection = (pipeId: number) =>
+    setState((prev) => ({
+      ...prev,
+      selectedPipeIds: prev.selectedPipeIds.includes(pipeId)
+        ? prev.selectedPipeIds.filter((id) => id !== pipeId)
+        : [...prev.selectedPipeIds, pipeId],
+    }));
+
+  const clearPipeSelection = () =>
+    setState((prev) => ({ ...prev, selectedPipeIds: [] }));
+
   // A new object literal is created on every render — no useMemo here.
   // Every call to setPipes, setLoading, or setSelectedTag causes ALL
   // context consumers to re-render, even if their relevant slice of state
@@ -45,6 +66,9 @@ export const PipeProvider: React.FC<{ children: React.ReactNode }> = ({
     setPipes,
     setSelectedTag,
     setLoading,
+    setMeasurementMode,
+    togglePipeSelection,
+    clearPipeSelection,
   };
 
   return <PipeContext.Provider value={value}>{children}</PipeContext.Provider>;

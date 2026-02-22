@@ -1,10 +1,19 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { usePipeContext } from "../context/PipeContext";
 
 const Navigation: React.FC = () => {
   const location = useLocation();
+  const { state, setMeasurementMode, clearPipeSelection } = usePipeContext();
   
   const isActive = (path: string) => location.pathname === path;
+
+  const handleMeasurementToggle = () => {
+    if (state.measurementMode) {
+      clearPipeSelection();
+    }
+    setMeasurementMode(!state.measurementMode);
+  };
   
   const linkStyle = (active: boolean): React.CSSProperties => ({
     padding: "8px 16px",
@@ -39,6 +48,33 @@ const Navigation: React.FC = () => {
       <Link to="/pipes/100000" style={linkStyle(isActive("/pipes/100000"))}>
         100K Pipes
       </Link>
+
+      {/* Measurement Mode Toggle */}
+      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
+        <button
+          onClick={handleMeasurementToggle}
+          style={{
+            padding: "8px 16px",
+            border: "1px solid #1565C0",
+            borderRadius: "4px",
+            backgroundColor: state.measurementMode ? "#1565C0" : "white",
+            color: state.measurementMode ? "white" : "#1565C0",
+            fontWeight: 600,
+            cursor: "pointer",
+            fontSize: "13px",
+            transition: "all 0.2s ease",
+          }}
+          aria-pressed={state.measurementMode}
+          aria-label="Toggle measurement mode"
+        >
+          📏 {state.measurementMode ? "Exit Measurement" : "Measure"}
+        </button>
+        {state.measurementMode && (
+          <span style={{ fontSize: "12px", color: "#666", fontStyle: "italic" }}>
+            Click pipes on the map to select them
+          </span>
+        )}
+      </div>
     </nav>
   );
 };

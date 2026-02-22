@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { usePipeContext } from "../context/PipeContext";
 import PipeMap from "./PipeMap";
+import MeasurementPanel from "./MeasurementPanel";
 
 const MapView: React.FC = () => {
-  const { state, setSelectedTag } = usePipeContext();
+  const { state, setSelectedTag, setMeasurementMode, clearPipeSelection } = usePipeContext();
 
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
@@ -20,8 +21,15 @@ const MapView: React.FC = () => {
     ? state.pipes.filter((p) => (p.tags as string[]).includes(activeTag))
     : state.pipes;
 
+  const selectedPipes = state.pipes.filter((p) => state.selectedPipeIds.includes(p.id));
+
+  const handleCloseMeasurement = () => {
+    setMeasurementMode(false);
+    clearPipeSelection();
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative" }}>
       <div
         style={{
           padding: "6px 10px",
@@ -69,6 +77,15 @@ const MapView: React.FC = () => {
       <div style={{ flex: 1, minHeight: 0 }}>
         <PipeMap pipes={filteredPipes} />
       </div>
+      
+      {/* Measurement Panel - shown when measurement mode is active */}
+      {state.measurementMode && (
+        <MeasurementPanel
+          selectedPipes={selectedPipes}
+          onClose={handleCloseMeasurement}
+          onClearSelection={clearPipeSelection}
+        />
+      )}
     </div>
   );
 };

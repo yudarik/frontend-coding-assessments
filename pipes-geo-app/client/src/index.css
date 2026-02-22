@@ -19,3 +19,12 @@ body {
 button {
   font-family: inherit;
 }
+
+/* Measurement mode styles */
+.measurement-pipe-clickable {
+  cursor: pointer !important;
+}
+
+.leaflet-container.measurement-mode {
+  cursor: crosshair;
+}
